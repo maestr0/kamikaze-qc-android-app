@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">ARDUINO 3color DIODE</string>
+    <string name="app_name">Kamikaze QC</string>
+    <string name="redDiode">Red</string>
+    <string name="greenDiode">Green</string>
+    <string name="blueDiode">Blue</string>
+    <string name="orientation">Orientation</string>
+</resources>
