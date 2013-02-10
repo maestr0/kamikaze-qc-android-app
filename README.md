@@ -19,35 +19,3 @@ Arduino together with the Android phone sit on top of the QC.
 
 
 
-
-
-
-M1                           M2
-  \                         /
-    \                     /
-      \                 /
-        \             /
-          \         /
-          __________
-          |Arduino |
-          |   +    |
-          |Android |
-          ---====---
-            /     \
-          /         \
-       /              \
-     /                  \
-    /                     \
-  /                         \
-M3                            M4  
-
-
-
-
-
-M1-4 - QC Motors
-=== - Android Phone attached to the side of the QC
-
-
-
-
