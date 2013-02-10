@@ -263,7 +263,9 @@ public class KamikazeActivity extends Activity implements Runnable,
 		}
 
 		UsbAccessory[] accessories = mUsbManager.getAccessoryList();
-		log("Accessory LIST SIZE=" + accessories.length);
+		if(accessories!=null){
+			log("Accessory LIST SIZE=" + accessories.length);
+		}
 		UsbAccessory accessory = (accessories == null ? null : accessories[0]);
 		if (accessory != null) {
 			if (mUsbManager.hasPermission(accessory)) {
@@ -473,11 +475,12 @@ public class KamikazeActivity extends Activity implements Runnable,
 				Log.e(TAG, msg, e);
 				log(msg);
 			}
-		} else {
-			String msg = "Output Stream NULL";
-			Log.e(TAG, msg);
-			log(msg);
-		}
+		} 
+//		else {
+//			String msg = "Output Stream NULL";
+//			Log.e(TAG, msg);
+//			log(msg);
+//		}
 	}
 
 	private void updateMotorThrustView(int m1t, int m2t, int m3t, int m4t) {
