@@ -117,7 +117,35 @@ public class FlightControlEngine implements Runnable {
 			useFlightConfigurationFromRemoteServer(tm);
 		calculatePitchCorrectionVector(tm);
 		calculateRollCorrectionVector(tm);
+		normalizeCorrectionVector(tm);
 		updateMotorThrust(tm);
+	}
+
+	private void normalizeCorrectionVector(ThrustMatrix tm) {
+		double normalizationFactor = 1.0f;
+		if (normalizationFactor < calculateNormalizationFactor(tm.m1)) {
+			normalizationFactor = calculateNormalizationFactor(tm.m1);
+		}
+		if (normalizationFactor < calculateNormalizationFactor(tm.m2)) {
+			normalizationFactor = calculateNormalizationFactor(tm.m2);
+		}
+		if (normalizationFactor < calculateNormalizationFactor(tm.m3)) {
+			normalizationFactor = calculateNormalizationFactor(tm.m3);
+		}
+		if (normalizationFactor < calculateNormalizationFactor(tm.m4)) {
+			normalizationFactor = calculateNormalizationFactor(tm.m4);
+		}
+		tm.m1 /= normalizationFactor;
+		tm.m2 /= normalizationFactor;
+		tm.m3 /= normalizationFactor;
+		tm.m4 /= normalizationFactor;
+	}
+
+	public double calculateNormalizationFactor(double motorCorrectionVector) {
+		if (motorCorrectionVector > correctionVectorMax) {
+			return (motorCorrectionVector / correctionVectorMax);
+		}
+		return 1.0f;
 	}
 
 	private void useFlightConfigurationFromRemoteServer(ThrustMatrix tm) {
@@ -132,9 +160,6 @@ public class FlightControlEngine implements Runnable {
 	private void calculatePitchCorrectionVector(ThrustMatrix tm) {
 		// pitch difference
 		double v = cv * Math.abs(getPitchDiviation());
-		if(v > correctionVectorMax)
-			v = correctionVectorMax;
-		
 		if (getPitchDiviation() > 0) {
 			tm.m3 += v;
 			tm.m4 += v;
@@ -148,8 +173,6 @@ public class FlightControlEngine implements Runnable {
 		double v;
 		// roll difference
 		v = cv * Math.abs(getRollDiviation());
-		if(v > correctionVectorMax)
-			v = correctionVectorMax;
 		if (getRollDiviation() > 0) {
 			tm.m2 += v;
 			tm.m4 += v;
@@ -203,12 +226,13 @@ public class FlightControlEngine implements Runnable {
 				flightConsoleConfig = new FlightConfiguration(cfg);
 				setBaseThrust(flightConsoleConfig.baseThrust);
 				setCorrectionVector(flightConsoleConfig.correctionVector);
+				correctionVectorMax = flightConsoleConfig.correctionLimit;
 			}
-//			try {
-//				Thread.sleep(1000);
-//			} catch (InterruptedException e) {
-//				Log.e(TAG,e.getMessage());
-//			}
+			// try {
+			// Thread.sleep(1000);
+			// } catch (InterruptedException e) {
+			// Log.e(TAG,e.getMessage());
+			// }
 		}
 		Log.d(TAG, "RC Thread STOPPED");
 	}
@@ -249,13 +273,14 @@ public class FlightControlEngine implements Runnable {
 			}
 			Log.v(TAG, sb.toString());
 			return result = sb.toString();
-			
+
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 			Log.e(TAG, e.getMessage());
 		} catch (IOException e) {
 			e.printStackTrace();
-			Log.e(TAG, "IO Exception " + (e!=null ? e.getMessage() :" MSG NULL"));
+			Log.e(TAG, "IO Exception "
+					+ (e != null ? e.getMessage() : " MSG NULL"));
 		}
 		return null;
 	}
