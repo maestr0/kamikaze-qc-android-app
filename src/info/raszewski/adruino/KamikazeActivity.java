@@ -12,6 +12,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -19,12 +20,15 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.ParcelFileDescriptor;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -35,7 +39,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-@TargetApi(11)
+@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
 public class KamikazeActivity extends Activity implements Runnable,
 		OnSeekBarChangeListener, SensorEventListener {
 
@@ -79,10 +83,6 @@ public class KamikazeActivity extends Activity implements Runnable,
 	FileInputStream mInputStream;
 	FileOutputStream mOutputStream;
 
-	private TextView tempValue;
-
-	private Handler handler;
-
 	protected boolean isOn;
 
 	private FlightControlEngine fce;
@@ -94,6 +94,11 @@ public class KamikazeActivity extends Activity implements Runnable,
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 
 		public void onReceive(Context context, Intent intent) {
+			openUsbWhenConnected(intent);
+			closeUsbWhenDisconnected(intent);
+		}
+
+		private void openUsbWhenConnected(Intent intent) {
 			String action = intent.getAction();
 			if (ACTION_USB_PERMISSION.equals(action)) {
 				synchronized (this) {
@@ -112,7 +117,10 @@ public class KamikazeActivity extends Activity implements Runnable,
 					}
 				}
 			}
+		}
 
+		private void closeUsbWhenDisconnected(Intent intent) {
+			String action = intent.getAction();
 			if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
 				UsbAccessory accessory = (UsbAccessory) intent
 						.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
@@ -125,24 +133,44 @@ public class KamikazeActivity extends Activity implements Runnable,
 		}
 	};
 
+	private SharedPreferences sharedPrefs;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		initLayout();
 		fce = new FlightControlEngine();
+		sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+		initUSB();
+        bindSensors();
+		bindAndInitAllScreenElements();
+		initListeners();
+	}
 
+	private void initUSB() {
 		mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 		mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(
 				ACTION_USB_PERMISSION), 0);
 		IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
+	}
 
+	private void initLayout() {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.main);
-        
+	}
+
+	private void bindSensors() {
+		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        mSensorManager.registerListener(this, mOrientation,
+				SensorManager.SENSOR_DELAY_NORMAL);
+	}
+
+	private void bindAndInitAllScreenElements() {
 		azimuth_bar = (ProgressBar) findViewById(R.id.azimuth_bar);
 		roll_bar = (ProgressBar) findViewById(R.id.roll_bar);
 		pitch_bar = (ProgressBar) findViewById(R.id.pitch_bar);
@@ -151,8 +179,6 @@ public class KamikazeActivity extends Activity implements Runnable,
 		rVal = (TextView) findViewById(R.id.r_val);
 		pVal = (TextView) findViewById(R.id.p_val);
 
-		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-		mOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
 
 		thrustText1 = (TextView) findViewById(R.id.thrustText1);
 		thrustText2 = (TextView) findViewById(R.id.thrustText2);
@@ -169,14 +195,10 @@ public class KamikazeActivity extends Activity implements Runnable,
 		mainSwitch = (ToggleButton) findViewById(R.id.mainSwitch);
 		usbStatus = (ToggleButton) findViewById(R.id.usbStatus);
 		calibrate = (Button) findViewById(R.id.calibrateButton);
-
+		
 		fce.setThrust(thrustSlider.getProgress());
 		fce.setCorrectionVector(correctionVectorSlider.getProgress());
-
 		enableControls(false);
-		handler = new Handler();
-
-		initListeners();
 		thrustBar1.setKeepScreenOn(true);
 	}
 
@@ -286,9 +308,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 		} else {
 			Log.d(TAG, "mAccessory is null");
 		}
-
-		mSensorManager.registerListener(this, mOrientation,
-				SensorManager.SENSOR_DELAY_NORMAL);
+		
 	}
 
 	@Override
@@ -450,7 +470,6 @@ public class KamikazeActivity extends Activity implements Runnable,
 
 			updateMotorThrustView(m1t, m2t, m3t, m4t);
 
-			// TODO: send thrust config to Arduino
 			sendMotorThrustToArduino(m1t, m2t, m3t, m4t);
 		}
 	}
@@ -476,11 +495,6 @@ public class KamikazeActivity extends Activity implements Runnable,
 				log(msg);
 			}
 		} 
-//		else {
-//			String msg = "Output Stream NULL";
-//			Log.e(TAG, msg);
-//			log(msg);
-//		}
 	}
 
 	private void updateMotorThrustView(int m1t, int m2t, int m3t, int m4t) {
@@ -495,5 +509,22 @@ public class KamikazeActivity extends Activity implements Runnable,
 		thrustText4.setText("" + m4t);
 
 	}
+	
+	@Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(Menu.NONE, 0, 0, "Settings");
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case 0:
+                startActivity(new Intent(this, QuickPrefsActivity.class));
+                return true;
+        }
+        return false;
+    }
+    
 
 }

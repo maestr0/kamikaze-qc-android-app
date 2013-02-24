@@ -15,6 +15,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" >
 
+            <ToggleButton
+                android:id="@+id/usbStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="#FFF"
+                android:enabled="false"
+                android:text="ToggleButton"
+                android:textOff="DISC"
+                android:textOn="OK" />
+
             <Button
                 android:id="@+id/calibrateButton"
                 android:layout_width="wrap_content"
@@ -22,22 +32,19 @@
                 android:text="Calibrate" />
 
             <ToggleButton
+                android:id="@+id/remoteControlSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="ToggleButton"
+                android:textOff="RC OFF"
+                android:textOn="RC  ON" />
+
+            <ToggleButton
                 android:id="@+id/mainSwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:text="ToggleButton" />
-
-            <ToggleButton
-                android:id="@+id/usbStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="#FFF"
-                android:enabled="false"
-                android:text="ToggleButton"
-                android:textOff="DISC"
-                android:textOn="OK" />
-
         </LinearLayout>
 
         <LinearLayout

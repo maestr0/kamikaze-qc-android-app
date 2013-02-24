@@ -36,6 +36,8 @@ public class FlightControlEngine {
 	public void setStatus(boolean isFlying) {
 		this.isFlying = isFlying;
 		Log.v(TAG, "IS FLYING=" + isFlying);
+		if(!isFlying)
+			setThrust(0);
 	}
 
 	public void setThrust(int thrust) {
