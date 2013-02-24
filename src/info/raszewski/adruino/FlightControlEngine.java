@@ -72,6 +72,7 @@ public class FlightControlEngine implements Runnable {
 		Thread rcThread = new Thread(this);
 		rcThread.setDaemon(true);
 		rcThread.start();
+		Log.d(TAG, "StartRemoteControl method called");
 		return isRemoteControled;
 	}
 
@@ -131,6 +132,9 @@ public class FlightControlEngine implements Runnable {
 	private void calculatePitchCorrectionVector(ThrustMatrix tm) {
 		// pitch difference
 		double v = cv * Math.abs(getPitchDiviation());
+		if(v > correctionVectorMax)
+			v = correctionVectorMax;
+		
 		if (getPitchDiviation() > 0) {
 			tm.m3 += v;
 			tm.m4 += v;
@@ -144,6 +148,8 @@ public class FlightControlEngine implements Runnable {
 		double v;
 		// roll difference
 		v = cv * Math.abs(getRollDiviation());
+		if(v > correctionVectorMax)
+			v = correctionVectorMax;
 		if (getRollDiviation() > 0) {
 			tm.m2 += v;
 			tm.m4 += v;
@@ -190,6 +196,7 @@ public class FlightControlEngine implements Runnable {
 
 	@Override
 	public void run() {
+		Log.d(TAG, "Starting RC Thread");
 		while (isRemoteControled) {
 			String cfg = callConfigurationAPI();
 			if (cfg != null) {
@@ -197,19 +204,25 @@ public class FlightControlEngine implements Runnable {
 				setBaseThrust(flightConsoleConfig.baseThrust);
 				setCorrectionVector(flightConsoleConfig.correctionVector);
 			}
+//			try {
+//				Thread.sleep(1000);
+//			} catch (InterruptedException e) {
+//				Log.e(TAG,e.getMessage());
+//			}
 		}
+		Log.d(TAG, "RC Thread STOPPED");
 	}
 
 	private String callConfigurationAPI() {
 		try {
 			int timeoutConnection = Integer.parseInt(sharedPrefs.getString(
-					"timeout_connection", "500"));
+					"timeout_connection", "5000"));
 			HttpParams httpParameters = new BasicHttpParams();
 			HttpConnectionParams.setConnectionTimeout(httpParameters,
 					timeoutConnection);
 			// in milliseconds which is the timeout for waiting for data.
 			int timeoutSocket = Integer.parseInt(sharedPrefs.getString(
-					"timeout_socket", "500"));
+					"timeout_socket", "5000"));
 			HttpConnectionParams.setSoTimeout(httpParameters, timeoutSocket);
 
 			DefaultHttpClient httpclient = new DefaultHttpClient(httpParameters);
@@ -234,15 +247,17 @@ public class FlightControlEngine implements Runnable {
 			while ((line = reader.readLine()) != null) {
 				sb.append(line + "\n");
 			}
+			Log.v(TAG, sb.toString());
 			return result = sb.toString();
+			
 		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			Log.e(TAG, e.getMessage());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			Log.e(TAG, "IO Exception " + (e!=null ? e.getMessage() :" MSG NULL"));
 		}
-		return "";
+		return null;
 	}
 
 	public int getBaseThrust() {

@@ -6,6 +6,8 @@
 
     <uses-feature android:name="android.hardware.usb.accessory" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <uses-sdk
         android:minSdkVersion="15"
         android:targetSdkVersion="17" />

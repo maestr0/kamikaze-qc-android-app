@@ -141,7 +141,6 @@ public class KamikazeActivity extends Activity implements Runnable,
 		sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 		fce = new FlightControlEngine(sharedPrefs);
 		initUSB();
-		bindSensors();
 		bindAndInitAllScreenElements();
 		initListeners();
 	}
@@ -283,7 +282,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 	@Override
 	public void onResume() {
 		super.onResume();
-
+		bindSensors();
 		log("Resumed");
 
 		if (mFileDescriptor != null && mInputStream != null
