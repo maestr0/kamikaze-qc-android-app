@@ -25,6 +25,22 @@
             android:numeric="integer"
             android:summary="Correction limit"
             android:title="Correction limit" />
+        <EditTextPreference
+            android:defaultValue="500"
+            android:dialogMessage="API Connection timeout"
+            android:dialogTitle="API Connection timeout"
+            android:key="timeout_connection"
+            android:numeric="integer"
+            android:summary="API Connection timeout"
+            android:title="API Connection timeout" />
+        <EditTextPreference
+            android:defaultValue="500"
+            android:dialogMessage="API Socket timeout"
+            android:dialogTitle="API Socket timeout"
+            android:key="timeout_socket"
+            android:numeric="integer"
+            android:summary="API Socket timeout"
+            android:title="API Socket timeout" />
     </PreferenceCategory>
 
 </PreferenceScreen>

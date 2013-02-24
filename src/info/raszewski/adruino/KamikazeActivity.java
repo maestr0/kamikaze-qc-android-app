@@ -64,7 +64,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 	private Button calibrate;
 	private ToggleButton mainSwitch;
 	private ToggleButton usbStatus;
-
+	private ToggleButton rcSwitch;
 	private ProgressBar thrustBar1;
 	private ProgressBar thrustBar2;
 	private ProgressBar thrustBar3;
@@ -83,6 +83,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 	FileInputStream mInputStream;
 	FileOutputStream mOutputStream;
 
+	private SharedPreferences sharedPrefs;
 	protected boolean isOn;
 
 	private FlightControlEngine fce;
@@ -133,14 +134,12 @@ public class KamikazeActivity extends Activity implements Runnable,
 		}
 	};
 
-	private SharedPreferences sharedPrefs;
-
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		initLayout();
-		fce = new FlightControlEngine();
 		sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+		fce = new FlightControlEngine(sharedPrefs);
 		initUSB();
 		bindSensors();
 		bindAndInitAllScreenElements();
@@ -192,10 +191,11 @@ public class KamikazeActivity extends Activity implements Runnable,
 		thrustSlider = (SeekBar) findViewById(R.id.thrust_slider);
 		correctionVectorSlider = (SeekBar) findViewById(R.id.correction_vector_slider);
 		mainSwitch = (ToggleButton) findViewById(R.id.mainSwitch);
+		rcSwitch = (ToggleButton) findViewById(R.id.remoteControlSwitch);
 		usbStatus = (ToggleButton) findViewById(R.id.usbStatus);
 		calibrate = (Button) findViewById(R.id.calibrateButton);
 
-		fce.setThrust(thrustSlider.getProgress());
+		fce.setBaseThrust(thrustSlider.getProgress());
 		fce.setCorrectionVector(correctionVectorSlider.getProgress());
 		enableControls(false);
 		thrustBar1.setKeepScreenOn(true);
@@ -210,7 +210,16 @@ public class KamikazeActivity extends Activity implements Runnable,
 						fce.setStatus(isChecked);
 					}
 				});
-
+		rcSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				if (isChecked)
+					fce.startRemoteControl();
+				else
+					fce.stopRemoteControl();
+			}
+		});
 		calibrate.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -257,7 +266,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress,
 					boolean fromUser) {
-				fce.setThrust(progress);
+				fce.setBaseThrust(progress);
 			}
 		});
 	}
@@ -406,9 +415,6 @@ public class KamikazeActivity extends Activity implements Runnable,
 				switch (buffer[i]) {
 
 				default: {
-
-					// updateTemperature(buffer, index);
-
 					i = bufferLength;
 				}
 					break;
@@ -451,6 +457,13 @@ public class KamikazeActivity extends Activity implements Runnable,
 		sendMotorThrustToArduino();
 		updateSensorUI(event);
 		updateMotorThrustView();
+		updateThrustAndCvSliders();
+	}
+
+	private void updateThrustAndCvSliders() {
+		thrustSlider.setVerticalScrollbarPosition(fce.getBaseThrust());
+		correctionVectorSlider.setVerticalScrollbarPosition(fce
+				.getCorrectionVector());
 	}
 
 	private void updateSensorUI(SensorEvent event) {
