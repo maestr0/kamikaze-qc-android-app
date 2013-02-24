@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
+    <EditTextPreference
+        android:defaultValue="5"
+        android:dialogMessage="Correction limit"
+        android:dialogTitle="Correction limit"
+        android:key="correction_max"
+        android:numeric="integer"
+        android:summary="Correction limit"
+        android:title="Correction limit" />
+
     <PreferenceCategory
         android:key="first_category"
-        android:title="First Category" >
-
-        <!-- <CheckBoxPreference -->
-        <!-- android:defaultValue="true" -->
-        <!-- android:key="perform_updates" -->
-        <!-- android:summary="Enable or disable data updates" -->
-        <!-- android:title="Enable updates" /> -->
+        android:title="Flight Console API" >
         <EditTextPreference
             android:defaultValue="http://192.168.1.4:3000/configuration"
             android:dialogMessage="Provide API url"
@@ -17,14 +20,6 @@
             android:key="api_url"
             android:summary="Config API url"
             android:title="Config API url" />
-        <EditTextPreference
-            android:defaultValue="5"
-            android:dialogMessage="Correction limit"
-            android:dialogTitle="Correction limit"
-            android:key="correction_limit"
-            android:numeric="integer"
-            android:summary="Correction limit"
-            android:title="Correction limit" />
         <EditTextPreference
             android:defaultValue="500"
             android:dialogMessage="API Connection timeout"

@@ -63,7 +63,7 @@
                 android:id="@+id/thrust_slider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="80"
+                android:max="120"
                 android:progress="30" />
 
             <TextView
@@ -77,8 +77,8 @@
                 android:id="@+id/correction_vector_slider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="30"
-                android:progress="15" />
+                android:max="15"
+                android:progress="5" />
         </LinearLayout>
 
         <TableLayout

@@ -39,16 +39,20 @@ public class FlightControlEngine implements Runnable {
 
 	private float pitch_angle;
 
+	private int correctionVectorMax = 0;
+
 	private float roll_angle;
 
 	private float calAzimuth;
 
-	private FlightConfiguration fc;
+	private FlightConfiguration flightConsoleConfig;
 
 	private SharedPreferences sharedPrefs;
 
 	public FlightControlEngine(SharedPreferences sharedPrefs) {
 		this.sharedPrefs = sharedPrefs;
+		correctionVectorMax = (Integer.parseInt(sharedPrefs.getString(
+				"correction_max", "5")));
 	}
 
 	public void calibrate() {
@@ -106,13 +110,6 @@ public class FlightControlEngine implements Runnable {
 		m4t = 0;
 	}
 
-	private class ThrustMatrix {
-		double m1 = 0;
-		double m2 = 0;
-		double m3 = 0;
-		double m4 = 0;
-	}
-
 	private void stabilizeFlight() {
 		ThrustMatrix tm = new ThrustMatrix();
 		if (isRemoteControled)
@@ -123,7 +120,12 @@ public class FlightControlEngine implements Runnable {
 	}
 
 	private void useFlightConfigurationFromRemoteServer(ThrustMatrix tm) {
-
+		if (flightConsoleConfig != null) {
+			tm.m1 = flightConsoleConfig.tm.m1;
+			tm.m2 = flightConsoleConfig.tm.m2;
+			tm.m3 = flightConsoleConfig.tm.m3;
+			tm.m4 = flightConsoleConfig.tm.m4;
+		}
 	}
 
 	private void calculatePitchCorrectionVector(ThrustMatrix tm) {
@@ -189,20 +191,25 @@ public class FlightControlEngine implements Runnable {
 	@Override
 	public void run() {
 		while (isRemoteControled) {
-			fc = fetchFlightConfiguration();
-			setBaseThrust(fc.baseThrust);
+			String cfg = callConfigurationAPI();
+			if (cfg != null) {
+				flightConsoleConfig = new FlightConfiguration(cfg);
+				setBaseThrust(flightConsoleConfig.baseThrust);
+				setCorrectionVector(flightConsoleConfig.correctionVector);
+			}
 		}
 	}
 
-	private FlightConfiguration fetchFlightConfiguration() {
+	private String callConfigurationAPI() {
 		try {
-			int timeoutConnection = sharedPrefs.getInt("timeout_connection",
-					500);
+			int timeoutConnection = Integer.parseInt(sharedPrefs.getString(
+					"timeout_connection", "500"));
 			HttpParams httpParameters = new BasicHttpParams();
 			HttpConnectionParams.setConnectionTimeout(httpParameters,
 					timeoutConnection);
 			// in milliseconds which is the timeout for waiting for data.
-			int timeoutSocket = sharedPrefs.getInt("timeout_socket", 500);
+			int timeoutSocket = Integer.parseInt(sharedPrefs.getString(
+					"timeout_socket", "500"));
 			HttpConnectionParams.setSoTimeout(httpParameters, timeoutSocket);
 
 			DefaultHttpClient httpclient = new DefaultHttpClient(httpParameters);
@@ -227,7 +234,7 @@ public class FlightControlEngine implements Runnable {
 			while ((line = reader.readLine()) != null) {
 				sb.append(line + "\n");
 			}
-			result = sb.toString();
+			return result = sb.toString();
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -235,7 +242,7 @@ public class FlightControlEngine implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return new FlightConfiguration();
+		return "";
 	}
 
 	public int getBaseThrust() {
