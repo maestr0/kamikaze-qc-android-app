@@ -142,7 +142,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 		fce = new FlightControlEngine();
 		sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 		initUSB();
-        bindSensors();
+		bindSensors();
 		bindAndInitAllScreenElements();
 		initListeners();
 	}
@@ -158,15 +158,15 @@ public class KamikazeActivity extends Activity implements Runnable,
 
 	private void initLayout() {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setContentView(R.layout.main);
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+				WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		setContentView(R.layout.main);
 	}
 
 	private void bindSensors() {
 		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
-        mSensorManager.registerListener(this, mOrientation,
+		mOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+		mSensorManager.registerListener(this, mOrientation,
 				SensorManager.SENSOR_DELAY_NORMAL);
 	}
 
@@ -178,7 +178,6 @@ public class KamikazeActivity extends Activity implements Runnable,
 		aVal = (TextView) findViewById(R.id.a_val);
 		rVal = (TextView) findViewById(R.id.r_val);
 		pVal = (TextView) findViewById(R.id.p_val);
-
 
 		thrustText1 = (TextView) findViewById(R.id.thrustText1);
 		thrustText2 = (TextView) findViewById(R.id.thrustText2);
@@ -195,7 +194,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 		mainSwitch = (ToggleButton) findViewById(R.id.mainSwitch);
 		usbStatus = (ToggleButton) findViewById(R.id.usbStatus);
 		calibrate = (Button) findViewById(R.id.calibrateButton);
-		
+
 		fce.setThrust(thrustSlider.getProgress());
 		fce.setCorrectionVector(correctionVectorSlider.getProgress());
 		enableControls(false);
@@ -285,7 +284,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 		}
 
 		UsbAccessory[] accessories = mUsbManager.getAccessoryList();
-		if(accessories!=null){
+		if (accessories != null) {
 			log("Accessory LIST SIZE=" + accessories.length);
 		}
 		UsbAccessory accessory = (accessories == null ? null : accessories[0]);
@@ -308,7 +307,7 @@ public class KamikazeActivity extends Activity implements Runnable,
 		} else {
 			Log.d(TAG, "mAccessory is null");
 		}
-		
+
 	}
 
 	@Override
@@ -448,39 +447,30 @@ public class KamikazeActivity extends Activity implements Runnable,
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
-		if (fce.isFlying()) {
-			float azimuth_angle = event.values[0];
-			float pitch_angle = event.values[1];
-			float roll_angle = event.values[2];
-
-			fce.updateSensorStatus(event);
-
-			roll_bar.setProgress((int) (roll_angle + 90));
-			pitch_bar.setProgress((int) (pitch_angle + 180));
-			azimuth_bar.setProgress((int) (azimuth_angle));
-
-			aVal.setText(azimuth_angle + "°");
-			pVal.setText(pitch_angle + "°");
-			rVal.setText(roll_angle + "°");
-
-			int m1t = fce.getM1Thrust();
-			int m2t = fce.getM2Thrust();
-			int m3t = fce.getM3Thrust();
-			int m4t = fce.getM4Thrust();
-
-			updateMotorThrustView(m1t, m2t, m3t, m4t);
-
-			sendMotorThrustToArduino(m1t, m2t, m3t, m4t);
-		}
+		fce.updateSensorStatus(event);
+		sendMotorThrustToArduino();
+		updateSensorUI(event);
+		updateMotorThrustView();
 	}
 
-	private void sendMotorThrustToArduino(int m1t, int m2t, int m3t, int m4t) {
+	private void updateSensorUI(SensorEvent event) {
+		float azimuth_angle = event.values[0];
+		float pitch_angle = event.values[1];
+		float roll_angle = event.values[2];
+		roll_bar.setProgress((int) (roll_angle + 90));
+		pitch_bar.setProgress((int) (pitch_angle + 180));
+		azimuth_bar.setProgress((int) (azimuth_angle));
+		aVal.setText(azimuth_angle + "°");
+		pVal.setText(pitch_angle + "°");
+		rVal.setText(roll_angle + "°");
+	}
 
+	private void sendMotorThrustToArduino() {
 		byte[] buffer = new byte[4];
-		buffer[0] = (byte) m1t;
-		buffer[1] = (byte) m2t;
-		buffer[2] = (byte) m3t;
-		buffer[3] = (byte) m4t;
+		buffer[0] = (byte) fce.getM1Thrust();
+		buffer[1] = (byte) fce.getM2Thrust();
+		buffer[2] = (byte) fce.getM3Thrust();
+		buffer[3] = (byte) fce.getM4Thrust();
 
 		if (mOutputStream != null) {
 			try {
@@ -494,10 +484,15 @@ public class KamikazeActivity extends Activity implements Runnable,
 				Log.e(TAG, msg, e);
 				log(msg);
 			}
-		} 
+		}
 	}
 
-	private void updateMotorThrustView(int m1t, int m2t, int m3t, int m4t) {
+	private void updateMotorThrustView() {
+		int m1t = fce.getM1Thrust();
+		int m2t = fce.getM2Thrust();
+		int m3t = fce.getM3Thrust();
+		int m4t = fce.getM4Thrust();
+
 		thrustBar1.setProgress(m1t);
 		thrustBar2.setProgress(m2t);
 		thrustBar3.setProgress(m3t);
@@ -509,22 +504,21 @@ public class KamikazeActivity extends Activity implements Runnable,
 		thrustText4.setText("" + m4t);
 
 	}
-	
-	@Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, 0, 0, "Settings");
-        return super.onCreateOptionsMenu(menu);
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case 0:
-                startActivity(new Intent(this, QuickPrefsActivity.class));
-                return true;
-        }
-        return false;
-    }
-    
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		menu.add(Menu.NONE, 0, 0, "Settings");
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case 0:
+			startActivity(new Intent(this, QuickPrefsActivity.class));
+			return true;
+		}
+		return false;
+	}
 
 }

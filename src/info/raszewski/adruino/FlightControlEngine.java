@@ -36,8 +36,6 @@ public class FlightControlEngine {
 	public void setStatus(boolean isFlying) {
 		this.isFlying = isFlying;
 		Log.v(TAG, "IS FLYING=" + isFlying);
-		if(!isFlying)
-			setThrust(0);
 	}
 
 	public void setThrust(int thrust) {
@@ -54,9 +52,17 @@ public class FlightControlEngine {
 		azimuth_angle = event.values[0];
 		pitch_angle = event.values[1];
 		roll_angle = event.values[2];
+		if (isFlying)
+			calculateThrust();
+		else
+			resetMotors();
+	}
 
-		calculateThrust();
-
+	private void resetMotors() {
+		m1t = 0;
+		m2t = 0;
+		m3t = 0;
+		m4t = 0;
 	}
 
 	private void calculateThrust() {
